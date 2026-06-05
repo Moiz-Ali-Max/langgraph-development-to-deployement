@@ -1,4 +1,4 @@
-# LangGraph — From Fundamentals to Production
+# LangGraph: From Fundamentals to Production
 
 A structured covering LangGraph end-to-end. Each topic lives in its own folder with working code, explanations, and notes
 
