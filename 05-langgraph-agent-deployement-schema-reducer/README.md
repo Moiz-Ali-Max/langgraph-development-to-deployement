@@ -43,3 +43,9 @@ Pydantic is a data validation and settings management ibrary using python type a
 - Pydantic can perform validation to check wether data confirms to the specified types and contraints at runtime
 
 
+*We can use Pydantic State in our graoh seamlessly*
+
+##### Custom Reducer
+To address cases like that we can also define custom reducers
+- E.g., define custom reducer logic to combine lists and handle cases where either or both of the inputs might be None
+
