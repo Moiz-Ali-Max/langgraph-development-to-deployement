@@ -224,4 +224,84 @@ display(Image(graph.get_graph().draw_mermaid_png()))
 # for m in output['messages']:
 #     m.pretty_print()
 
+# Node
+def chat_model_node(state: MessagesState):
+    # return {"messages": [llm.invoke(state["messages"[-1:]])]}
+    return {"messages": [llm.invoke(state["messages"][-1:])]}
+
+# Build Graph
+builder: StateGraph = StateGraph(MessagesState)
+
+builder.add_node("chat_model", chat_model_node)
+
+builder.add_edge(START, "chat_model")
+builder.add_edge("chat_model", END)
+
+graph: CompiledStateGraph = builder.compile()
+
+# View
+display(Image(graph.get_graph().draw_mermaid_png()))
+
+messages = [
+    HumanMessage("What can you tell me about whales?", name="Moiz")
+]
+
+output = graph.invoke({'messages': messages})
+
+messages.append(output['messages'][-1]) # Append the response from the LLM to the conversation
+messages.append(HumanMessage(f"Tell me more about Narwhals", name="Moiz"))
+
+for m in messages:
+    m.pretty_print()
+
+# Invoke using Message Filtering
+output = graph.invoke({'messages': messages})
+for m in output['messages']:
+    m.pretty_print()
+
+from langchain_core.messages import trim_messages
+
+# Node
+def chat_model_node(state: MessagesState):
+    messages = trim_messages(
+        state["messages"],
+        max_tokens = 100,
+        strategy = "last", # Retains the last message upto the token limit
+        token_counter = ChatGoogleGenerativeAI(model="gemini-2.5-flash"),
+        allow_partial = False, # Prevent Partial Messsages form being included
+    )
+    return {"messages": [llm.invoke(messages)]}
+
+# Build Graph
+builder = StateGraph(MessagesState)
+
+builder.add_node("chat_model", chat_model_node)
+
+builder.add_edge(START, "chat_model")
+builder.add_edge("chat_model", END)
+
+graph = builder.compile()
+
+# View
+display(Image(graph.get_graph().draw_mermaid_png()))
+
+messages.append(output['messages'][-1])
+messages.append(HumanMessage(content="Tell me where Orcas live. Is it place of monsters and vampire", name="Moiz"))
+
+# Example of trimming messages
+trim_messages(
+    messages,
+    max_tokens=80,
+    strategy="last",
+    token_counter=ChatGoogleGenerativeAI(model="gemini-2.5-flash"),
+    allow_partial=False
+)
+
+import os
+os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "/content/newkey.json"
+# Invoke using message trimming in the chat_model_node
+messages_out_trim = graph.invoke({"messages": messages})
+for m in messages_out_trim['messages']:
+    m.pretty_print()
+
 

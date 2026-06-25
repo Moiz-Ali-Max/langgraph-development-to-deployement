@@ -35,4 +35,13 @@ A practical challenege when working with messages is managing long-running conve
 - Long running conversations result in high token usage and latency if we are not careful b/c we pass a growing list of messages to the model
 
 
+##### Filtering Messages
+If we don't need or want to modify the graph state, we can just filter the messages you pass to the chat model
+- for example, just pass in a filtered list: llm.invoke(messages[-1:]) to the model
+
+##### Trim Messages
+Another approach is to trim messages based upon a set number of tokens.
+- This restricts the message history to a specific number of tokens
+- While filtering only returns a post-hoc subset of the messages between agents, trimming restricts the number of tokens that a chat model can use to respond.
+
 

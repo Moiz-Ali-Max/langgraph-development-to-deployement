@@ -1,26 +1,20 @@
-# Messages Summarization, Short Term Local Memory with Threads/Checkpointers
-### ChatBot Summarization
+import os
+from dotenv import load_dotenv
+load_dotenv()
 
-*Rather than just trimming or filtering messages, use LLMs to produce a running summary of the conversation*
+os.environ["GEMINI_API_KEY"] = os.getenv("GEMINI_API_KEY")
+os.environ["LANGCHAIN_API_KEY"] = os.getenv("LANGCHAIN_API_KEY")
 
-*This allow us to retain a compressed representation of the full conversation, rather than just removing it with trimming or filtering*
+from langchain_google_genai import ChatGoogleGenerativeAI
 
-*We;ll incorporate this summarization into a simple ChatBot*
+model: ChatGoogleGenerativeAI = ChatGoogleGenerativeAI(model="gemini-2.5-flash")
+model.invoke("Hi")
 
-*And we'll equip that ChatBot with memory, supporting long-running conversations without incurring high token cost/latency*
-
-We'll use Messages state,
-- In addition to the built-in messages key, we'll now include a custom key(summary)
-
-```
 from langgraph.graph import MessagesState
 
 class State(MessagesState):
     summary: str
-```
 
-We'll define a node to call our LLM that incorporates a summary, if it exists into the prompt
-```
 from langchain_core.messages import SystemMessage, HumanMessage, RemoveMessage
 
 # Define the logic to call the model
@@ -42,11 +36,7 @@ def call_model(state: State) -> State:
 
     response = model.invoke(messages)
     return {"messages": response}
-```
 
-We'll define a node to produce a summary
-- here we'll use RemoveMessage to filter our state after we've produced the summary
-```
 def summarize_conversation(state: State):
 
     # First we get any existing summary
@@ -70,10 +60,7 @@ def summarize_conversation(state: State):
     # Delete all but the 2 most recent messages
     delete_messages = [RemoveMessage(id=m.id) for m in state['messages'][:-2]]
     return {"summary": response.content, "messages": delete_messages}
-```
 
-We'll add a conditional edge to determine whether to produce a summary based on the conversation length
-```
 from langgraph.graph import END
 
 # Determine whether to end or summarize the conversation
@@ -90,19 +77,7 @@ def should_continue(state: State):
     
     # Otherwise we can just end
     return END
-```
 
-### Adding Memory
-*state is transient to a single graph execution*
-- This limits our ability to have multi-turn conversations with interruptions, so we can use persistence to address this.
-
-**LangGraph** can use a checkpointer to automatically save the graph state after each step.
-- This built-in persistence layer gives us memory, allowing langgraph to pick up from the last state update.
-- one of the easiest to work with is MemorySave, an in-memory key-value store for graph state
-- just need to compile the graph with a checkpointer and our graph has memory
-
-
-```
 from IPython.display import Image, display
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import StateGraph, START
@@ -134,5 +109,4 @@ graph: CompiledStateGraph = workflow.compile(checkpointer=memory)
 
 # View
 display(Image(graph.get_graph().draw_mermaid_png()))
-```
 
